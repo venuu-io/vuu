@@ -1,22 +1,29 @@
 {
-  "id": "main-tabs",
-  "type": "Stack",
-  "props": {
-    "className": "vuuShell-mainTabs",
-    "TabstripProps": {
-      "allowAddTab": true,
-      "allowRenameTab": true,
-      "animateSelectionThumb": false,
-      "className": "vuuShellMainTabstrip",
-      "location": "main-tab"
+  "applicationLayout": {
+    "type": "Stack",
+    "id": "main-tabs",
+    "props": {
+      "className": "vuuShell-mainTabs",
+      "TabstripProps": {
+        "allowAddTab": true,
+        "allowCloseTab": true,
+        "allowRenameTab": true,
+        "animateSelectionThumb": false,
+        "location": "main-tab",
+        "tabClassName": "MainTab"
+      },
+      "preserve": true,
+      "active": 0
     },
-    "preserve": true,
-    "active": 0
-  },
-  "children": [
-    {
-      "type": "Placeholder",
-      "title": "Page 1"
-    }
-  ]
+    "children": [
+      {
+        "props": {
+          "id": "tab1",
+          "title": "Tab 1",
+          "className": "vuuShell-Placeholder"
+        },
+        "type": "Placeholder"
+      }
+    ]
+  }
 }

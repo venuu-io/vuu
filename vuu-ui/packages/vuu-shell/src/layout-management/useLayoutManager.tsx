@@ -104,7 +104,7 @@ export const LayoutManagementProvider = (
       setApplicationJSON(
         {
           ...applicationJSONRef.current,
-          layout,
+          applicationLayout: layout,
         },
         rerender
       );
@@ -178,7 +178,7 @@ export const LayoutManagementProvider = (
   const saveLayout = useCallback(
     (metadata: LayoutMetadataDto) => {
       const layoutToSave = resolveJSONPath(
-        applicationJSONRef.current.layout,
+        applicationJSONRef.current.applicationLayout,
         "#main-tabs.ACTIVE_CHILD"
       );
 
@@ -245,7 +245,7 @@ export const LayoutManagementProvider = (
       getPersistenceManager()
         .loadLayout(id)
         .then((layoutJson) => {
-         const { layout: currentLayout } = applicationJSONRef.current;
+          const { applicationLayout: currentLayout } = applicationJSONRef.current;
           setApplicationLayout({
             ...currentLayout,
             children: (currentLayout.children || []).concat(layoutJson),

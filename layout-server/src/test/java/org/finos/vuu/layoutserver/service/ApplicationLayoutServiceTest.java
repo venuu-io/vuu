@@ -1,6 +1,5 @@
 package org.finos.vuu.layoutserver.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.finos.vuu.layoutserver.model.ApplicationLayout;
 import org.finos.vuu.layoutserver.repository.ApplicationLayoutRepository;
@@ -36,20 +35,21 @@ class ApplicationLayoutServiceTest {
     }
 
     @Test
-    public void getApplicationLayout_noLayout_returnsDefault() throws JsonProcessingException {
+    public void getApplicationLayout_noLayout_returnsDefault() {
         when(mockRepo.findById(anyString())).thenReturn(Optional.empty());
 
         ApplicationLayout actualLayout = service.getApplicationLayout("new user");
 
         // Expecting application layout as defined in /test/resources/defaultApplicationLayout.json
-        ObjectNode expectedDefinition = objectNodeConverter.convertToEntityAttribute("{\"defaultLayoutKey\":\"default-layout-value\"}");
+        ObjectNode expectedDefinition =
+                objectNodeConverter.convertToEntityAttribute("{\"defaultLayoutKey\":\"default-layout-value\"}");
 
         assertThat(actualLayout.getUsername()).isNull();
-        assertThat(actualLayout.getDefinition()).isEqualTo(expectedDefinition);
+        assertThat(actualLayout.getApplicationLayout()).isEqualTo(expectedDefinition);
     }
 
     @Test
-    public void getApplicationLayout_layoutExists_returnsLayout() throws JsonProcessingException {
+    public void getApplicationLayout_layoutExists_returnsLayout() {
         String user = "user";
 
         ObjectNode expectedDefinition = objectNodeConverter.convertToEntityAttribute("{\"id\":\"main-tabs\"}");
@@ -63,7 +63,7 @@ class ApplicationLayoutServiceTest {
     }
 
     @Test
-    public void createApplicationLayout_validDefinition_callsRepoSave() throws JsonProcessingException {
+    public void createApplicationLayout_validDefinition_callsRepoSave() {
         String user = "user";
         ObjectNode definition = objectNodeConverter.convertToEntityAttribute("{\"id\":\"main-tabs\"}");
 

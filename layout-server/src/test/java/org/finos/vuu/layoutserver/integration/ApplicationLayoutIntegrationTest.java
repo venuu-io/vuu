@@ -19,10 +19,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.iterableWithSize;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,9 +53,8 @@ public class ApplicationLayoutIntegrationTest {
 
         mockMvc.perform(get(BASE_URL).header("username", "new user"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username", nullValue()))
                 // Expecting application layout as defined in /test/resources/defaultApplicationLayout.json
-                .andExpect(jsonPath("$.definition.defaultLayoutKey", is("default-layout-value")));
+                .andExpect(jsonPath("$.defaultLayoutKey", is("default-layout-value")));
     }
 
     @Test
@@ -85,8 +88,7 @@ public class ApplicationLayoutIntegrationTest {
 
         mockMvc.perform(get(BASE_URL).header("username", user))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username", is(user)))
-                .andExpect(jsonPath("$.definition", is(definition)));
+                .andExpect(jsonPath("$", is(definition)));
     }
 
     @Test
@@ -103,7 +105,7 @@ public class ApplicationLayoutIntegrationTest {
         ApplicationLayout persistedLayout = repository.findById(user).orElseThrow();
 
         assertThat(persistedLayout.getUsername()).isEqualTo(user);
-        assertThat(persistedLayout.getDefinition()).isEqualTo(objectMapper.readTree(definition));
+        assertThat(persistedLayout.getApplicationLayout()).isEqualTo(objectMapper.readTree(definition));
     }
 
     @Test
@@ -128,7 +130,7 @@ public class ApplicationLayoutIntegrationTest {
         ApplicationLayout retrievedLayout = repository.findById(user).orElseThrow();
 
         assertThat(retrievedLayout.getUsername()).isEqualTo(user);
-        assertThat(retrievedLayout.getDefinition()).isEqualTo(objectMapper.readTree(newDefinition));
+        assertThat(retrievedLayout.getApplicationLayout()).isEqualTo(objectMapper.readTree(newDefinition));
     }
 
     @Test
