@@ -47,16 +47,12 @@
   font-family: inherit;
   font-size: inherit;
   font-weight: inherit;
+  height: calc(var(--tab-height) - var(--tab-thumb-height));
+  margin-bottom: var(--tab-thumb-height);
   outline: none;
   position: relative;
 }
 
-.vuuTabstrip.vuuOrientation-horizontal {
-  .vuuTab-main {
-    height: calc(var(--tab-height) - var(--tab-thumb-height));
-    margin-bottom: var(--tab-thumb-height);
-  }
-}
 .vuuTab-closeable .vuuTab-main {
   border-right: solid transparent var(--salt-size-unit);
 }

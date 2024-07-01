@@ -21,6 +21,7 @@ export * from "./price-ticker";
 export * from "./price-ticker";
 export * from "./split-button";
 export * from "./tabstrip";
+export { Tabstrip as TabstripNext } from "./tabstrip-next";
 export * from "./toolbar";
 export * from "./tree";
 export * from "./utils";
