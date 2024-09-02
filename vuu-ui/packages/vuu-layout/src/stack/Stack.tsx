@@ -9,7 +9,7 @@ import React, {
   ReactElement,
   ReactNode,
   useCallback,
-  useRef,
+  useRef
 } from "react";
 import { getDefaultTabLabel } from "../layout-reducer";
 import { StackProps } from "./stackTypes";
@@ -21,7 +21,7 @@ const classBase = "vuuTabs";
 const getDefaultTabIcon = () => undefined;
 
 const getChildElements = <T extends ReactElement = ReactElement>(
-  children: ReactNode,
+  children: ReactNode
 ): T[] => {
   const elements: T[] = [];
   React.Children.forEach(children, (child) => {
@@ -37,7 +37,61 @@ const getChildElements = <T extends ReactElement = ReactElement>(
 const DefaultTabstripProps: Partial<TabstripProps> = {
   allowAddTab: false,
   allowCloseTab: false,
+  allowRenameTab: false
+};
+
+export type RenderTabProps = Pick<
+  TabstripProps,
+  "allowCloseTab" | "allowRenameTab"
+> &
+  Pick<StackProps, "getTabIcon" | "getTabLabel">;
+
+const defaultTabProps: RenderTabProps = {
+  allowCloseTab: false,
   allowRenameTab: false,
+  getTabIcon: getDefaultTabIcon,
+  getTabLabel: getDefaultTabLabel
+};
+
+/**
+ * Exported as a convenience for layout configurations where the Tabstrip
+ * will be rendered outside the Stack
+ */
+export const renderTabsForStack = (
+  id: string,
+  children: ReactNode,
+  tabProps: RenderTabProps = defaultTabProps
+) => {
+  const tabLabels: string[] = [];
+  const {
+    allowCloseTab,
+    allowRenameTab,
+    getTabLabel = getDefaultTabLabel,
+    getTabIcon = getDefaultTabIcon
+  } = tabProps;
+
+  return getChildElements(children).map((child, idx) => {
+    const {
+      closeable = allowCloseTab,
+      id: childId = `${id}-${idx}`,
+      "data-tab-location": tabLocation
+    } = child.props;
+    const label = getTabLabel(child, idx, tabLabels);
+    tabLabels.push(label);
+    return (
+      <Tab
+        ariaControls={childId}
+        data-icon={getTabIcon(child, idx)}
+        key={childId}
+        id={`${childId}-tab`}
+        index={idx}
+        label={label}
+        location={tabLocation}
+        closeable={closeable}
+        editable={allowRenameTab}
+      />
+    );
+  });
 };
 
 export const Stack = forwardRef(function Stack(
@@ -46,8 +100,8 @@ export const Stack = forwardRef(function Stack(
     active = 0,
     children,
     className: classNameProp,
-    getTabIcon = getDefaultTabIcon,
-    getTabLabel = getDefaultTabLabel,
+    getTabIcon,
+    getTabLabel,
     id: idProp,
     keyBoardActivation = "manual",
     // onMouseDown,
@@ -57,15 +111,15 @@ export const Stack = forwardRef(function Stack(
     onTabEdit,
     onTabSelectionChanged,
     showTabs = "top",
-    style,
+    style
   }: StackProps,
-  ref: ForwardedRef<HTMLDivElement>,
+  ref: ForwardedRef<HTMLDivElement>
 ) {
   const targetWindow = useWindow();
   useComponentCssInjection({
     testId: "vuu-stack",
     css: stackCss,
-    window: targetWindow,
+    window: targetWindow
   });
 
   const id = useId(idProp);
@@ -73,7 +127,7 @@ export const Stack = forwardRef(function Stack(
   const {
     allowCloseTab,
     allowRenameTab,
-    className: tabstripClassName,
+    className: tabstripClassName
   } = TabstripProps;
 
   const handleExitEditMode = useCallback(
@@ -81,11 +135,11 @@ export const Stack = forwardRef(function Stack(
       _oldText: string,
       newText: string,
       _allowDeactivation: boolean,
-      tabIndex: number,
+      tabIndex: number
     ) => {
       onTabEdit?.(tabIndex, newText);
     },
-    [onTabEdit],
+    [onTabEdit]
   );
 
   const activeChild = () => {
@@ -105,38 +159,21 @@ export const Stack = forwardRef(function Stack(
   // to a new Tab. We rebuild on each render
   tabLabelsRef.current.length = 0;
 
-  const renderTabs = () =>
-    getChildElements(children).map((child, idx) => {
-      const {
-        closeable = allowCloseTab,
-        id: childId = `${id}-${idx}`,
-        "data-tab-location": tabLocation,
-      } = child.props;
-      const label = getTabLabel(child, idx, tabLabelsRef.current);
-      tabLabelsRef.current.push(label);
-      return (
-        <Tab
-          ariaControls={childId}
-          data-icon={getTabIcon(child, idx)}
-          key={childId}
-          id={`${childId}-tab`}
-          index={idx}
-          label={label}
-          location={tabLocation}
-          closeable={closeable}
-          editable={allowRenameTab}
-        />
-      );
-    });
-
   const child = activeChild();
   const isHorizontal = showTabs === "left" || showTabs === "right";
   const tabstripOrientation = isHorizontal ? "vertical" : "horizontal";
 
+  const tabProps = {
+    allowCloseTab,
+    allowRenameTab,
+    getTabLabel,
+    getTabIcon
+  };
+
   return (
     <div
       className={cx(classBase, classNameProp, {
-        [`${classBase}-horizontal`]: isHorizontal,
+        [`${classBase}-horizontal`]: isHorizontal
       })}
       style={style}
       id={id}
@@ -160,7 +197,7 @@ export const Stack = forwardRef(function Stack(
           onMoveTab={onMoveTab}
           orientation={tabstripOrientation}
         >
-          {renderTabs()}
+          {renderTabsForStack(id, children, tabProps)}
         </Tabstrip>
       ) : null}
       <div

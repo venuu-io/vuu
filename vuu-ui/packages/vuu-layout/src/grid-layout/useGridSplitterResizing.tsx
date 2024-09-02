@@ -43,11 +43,15 @@ import {
   isSplitter,
   setGridColumn,
   setGridRow,
-  setGridTrackTemplate,
-  StackLayout
+  setGridTrackTemplate
 } from "@finos/vuu-layout";
 import { GridLayoutProps } from "./GridLayout";
 import { GridLayoutItem, GridLayoutItemProps } from "./GridLayoutItem";
+import { GridLayoutStackedItem } from "./GridLayoutStackedtem";
+import {
+  addChildComponentToStack,
+  getChildComponent
+} from "./react-element-utils";
 
 export type SplitterResizingHookProps = Pick<
   GridLayoutProps,
@@ -624,85 +628,74 @@ export const useGridSplitterResizing = ({
   );
 
   const addChildComponent = useCallback(
-    (component: JSX.Element, { column, id, row }: IGridLayoutModelItem) => {
-      const newChild = (
-        <GridLayoutItem
-          header
-          id={id}
-          key={id}
-          resizeable="hv"
-          style={{
-            gridColumnStart: column.start,
-            gridColumnEnd: column.end,
-            gridRowStart: row.start,
-            gridRowEnd: row.end
-          }}
-          title="New One"
-        >
-          {component}
-        </GridLayoutItem>
-      );
-      setChildren((c) => c.concat(newChild));
-    },
-    []
-  );
-
-  useMemo(() => {
-    console.log(`children now had ${children.length} items`);
-  }, [children]);
-
-  const getChildComponent = useCallback(
-    (gridItemId): ReactElement | undefined => {
-      console.log(`find child in ${children.length} children`);
-      const targetGridItem = children.find(
-        (child) => child.props.id === gridItemId
-      );
-      if (targetGridItem) {
-        if (React.isValidElement(targetGridItem.props.children)) {
-          return targetGridItem.props.children;
-        } else if (Array.isArray(targetGridItem.props.children)) {
-          return targetGridItem.props.children.at(0);
-        }
+    (
+      component: JSX.Element,
+      { column, id, row, type }: IGridLayoutModelItem
+    ) => {
+      if (type === "stacked-content") {
+        const stack = getChildComponent(children, id);
+        const newChild = addChildComponentToStack(stack, component);
+        setChildren((c) =>
+          c.map((child) => (child.props.id === id ? newChild : child))
+        );
       } else {
-        throw Error(`getChildComponent #${gridItemId} not found`);
+        const newChild = (
+          <GridLayoutItem
+            header
+            id={id}
+            key={id}
+            resizeable="hv"
+            style={{
+              gridColumnStart: column.start,
+              gridColumnEnd: column.end,
+              gridRowStart: row.start,
+              gridRowEnd: row.end
+            }}
+            title="New One"
+          >
+            {component}
+          </GridLayoutItem>
+        );
+        setChildren((c) => c.concat(newChild));
       }
     },
     [children]
   );
-
-  const addChildComponentToStack = useCallback((stackElement, childElement) => {
-    if (Array.isArray(stackElement.props.children)) {
-      console.log(`children is an array`);
-    }
-  }, []);
 
   const replaceChildComponent = useCallback(
     (
       component: JSX.Element,
       { column, id, row, type }: IGridLayoutModelItem
     ) => {
-      const newChild = (
-        <GridLayoutItem
-          header={type !== "stacked-content"}
-          id={id}
-          key={id}
-          resizeable="hv"
-          style={{
-            gridColumnStart: column.start,
-            gridColumnEnd: column.end,
-            gridRowStart: row.start,
-            gridRowEnd: row.end
-          }}
-          title="New One"
-        >
-          {component}
-        </GridLayoutItem>
-      );
+      const props: Pick<GridLayoutItemProps, "id" | "resizeable" | "style"> & {
+        key: string;
+      } = {
+        id,
+        key: id,
+        resizeable: "hv",
+        style: {
+          gridColumnStart: column.start,
+          gridColumnEnd: column.end,
+          gridRowStart: row.start,
+          gridRowEnd: row.end
+        }
+      };
+
+      const newChild =
+        type === "stacked-content" ? (
+          <GridLayoutStackedItem {...props} active={1}>
+            {[getChildComponent(children, id), component]}
+          </GridLayoutStackedItem>
+        ) : (
+          <GridLayoutItem {...props} header title="New One">
+            {component}
+          </GridLayoutItem>
+        );
       setChildren((c) =>
         c.map((child) => (child.props.id === id ? newChild : child))
       );
     },
-    []
+    [children]
   );
 
   const handleDragEnd = useCallback<GridLayoutDragStartHandler>(() => {
@@ -731,28 +724,32 @@ export const useGridSplitterResizing = ({
    * of a json description of a new component
    */
   const handleDrop = useCallback<GridLayoutDropHandler>(
-    (target, payload, position) => {
+    (targetId, payload, position) => {
       const { current: grid } = containerRef;
-      const targetGridItem = layoutModel.getGridItem(target, true);
+      const targetGridItem = layoutModel.getGridItem(targetId, true);
 
       if (grid) {
         if (typeof payload === "string") {
           const gridItem = layoutModel.getGridItem(payload);
           const gridItemElement = document.getElementById(payload);
+          // TODO ...
           console.log({
             gridItem,
             gridItemElement
           });
         } else {
           const { type } = targetGridItem;
-          // need to create a unique id
+          // TODO look at how we manage component id values
           const id = uuid();
           const component = layoutFromJson(
             { ...payload, id } as LayoutJSON,
             ""
           );
           if (position === "centre") {
-            const newGridItem = layoutModel.replaceGridItem(target, "content");
+            const newGridItem = layoutModel.replaceGridItem(
+              targetId,
+              "content"
+            );
             if (type === "placeholder") {
               addChildComponent(component, newGridItem);
             } else {
@@ -762,27 +759,12 @@ export const useGridSplitterResizing = ({
             if (type === "content") {
               // all this does is change the type
               const newGridItem = layoutModel.replaceGridItem(
-                target,
+                targetId,
                 "stacked-content"
               );
-              // create a stack
-              const child = getChildComponent(target);
-              const stack = (
-                <StackLayout
-                  TabstripProps={{
-                    className: "vuuDropTarget",
-                    "data-drop-target": "tabs"
-                  }}
-                  active={1}
-                  showTabs="top"
-                >
-                  {[child, component]}
-                </StackLayout>
-              );
-              replaceChildComponent(stack, newGridItem);
+              replaceChildComponent(component, newGridItem);
             } else if (type === "stacked-content") {
-              const stack = getChildComponent(target);
-              addChildComponentToStack(stack, child);
+              addChildComponent(component, targetGridItem);
             } else {
               console.log(`how do we handle tabs ${type}`);
             }
@@ -793,7 +775,7 @@ export const useGridSplitterResizing = ({
               resizeDirection === "vertical" ? getRows(grid) : getColumns(grid);
 
             const { tracks, updates, newGridItem } = layoutModel.splitGridItem(
-              target,
+              targetId,
               position,
               currentTracks
             );
@@ -810,17 +792,10 @@ export const useGridSplitterResizing = ({
         const splitters = layoutModel.getSplitterPositions();
         setNonContentGridItems({ placeholders, splitters });
       } else {
-        throw Error(`splitGridRow no gridItem with id ${target}`);
+        throw Error(`splitGridRow no gridItem with id ${targetId}`);
       }
     },
-    [
-      addChildComponent,
-      addChildComponentToStack,
-      applyUpdates,
-      getChildComponent,
-      layoutModel,
-      replaceChildComponent
-    ]
+    [addChildComponent, applyUpdates, layoutModel, replaceChildComponent]
   );
 
   return {

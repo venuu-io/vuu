@@ -1,25 +1,27 @@
 import {
   GridLayoutItemProps,
+  Stack,
+  renderTabsForStack,
   useDraggable,
   useGridLayoutDragStartHandler,
-  useGridLayoutProps,
-  useGridLayoutProviderDispatch
+  useGridLayoutProps
 } from "@finos/vuu-layout";
-import { IconButton } from "@finos/vuu-ui-controls";
 import { useComponentCssInjection } from "@salt-ds/styles";
 import { useWindow } from "@salt-ds/window";
 import cx from "clsx";
-import { DragEvent, MouseEventHandler, useCallback } from "react";
+import { DragEvent, useCallback, useState } from "react";
 import { useAsDropTarget } from "./useAsDropTarget";
 import { useNotDropTarget } from "./useNotDropTarget";
 
 import { queryClosest } from "@finos/vuu-utils";
 import gridLayoutCss from "./GridLayout.css";
 import gridSplitterCss from "./GridSplitter.css";
+import { Tabstrip } from "@finos/vuu-ui-controls";
 
 const classBaseItem = "vuuGridLayoutItem";
 
 export const GridLayoutStackedItem = ({
+  active: activeProp = 0,
   children,
   className: classNameProp,
   header,
@@ -29,7 +31,9 @@ export const GridLayoutStackedItem = ({
   style: styleProp,
   title,
   ...htmlAttributes
-}: GridLayoutItemProps) => {
+}: GridLayoutItemProps & {
+  active?: number;
+}) => {
   const targetWindow = useWindow();
   useComponentCssInjection({
     testId: "vuu-grid-layout",
@@ -42,17 +46,9 @@ export const GridLayoutStackedItem = ({
     window: targetWindow
   });
 
-  const dispatch = useGridLayoutProviderDispatch();
   const layoutProps = useGridLayoutProps(id);
   const onDragStart = useGridLayoutDragStartHandler();
-
-  const onClose = useCallback<MouseEventHandler<HTMLButtonElement>>(
-    (evt) => {
-      evt.stopPropagation();
-      dispatch({ type: "close", id });
-    },
-    [dispatch, id]
-  );
+  const [active, setActive] = useState(activeProp);
 
   const getPayload = useCallback(
     (evt: DragEvent<Element>): [string, string] => {
@@ -73,6 +69,8 @@ export const GridLayoutStackedItem = ({
     onDragStart
   });
 
+  // const TabstripProps = useMemo<TabstripProps>(() => ({}), []);
+
   const className = cx(classBaseItem, {
     [`${classBaseItem}-resizeable-h`]: resizeable === "h",
     [`${classBaseItem}-resizeable-v`]: resizeable === "v",
@@ -81,9 +79,10 @@ export const GridLayoutStackedItem = ({
 
   const style = {
     ...styleProp,
-    ...layoutProps,
-    "--header-height": header ? "25px" : "0px"
+    ...layoutProps
   };
+
+  const stackId = `stack-${id}`;
 
   return (
     <div
@@ -95,25 +94,18 @@ export const GridLayoutStackedItem = ({
       key={id}
       style={style}
     >
-      {header ? (
-        <div
-          className={cx(`${classBaseItem}Header`, dropTargetClassName)}
-          data-drop-target="tabs"
-        >
-          <span className={`${classBaseItem}Header-title`} draggable>
-            {title}
-          </span>
-          <IconButton
-            className={`${classBaseItem}Header-close`}
-            data-align="right"
-            icon="close"
-            onClick={onClose}
-            variant="secondary"
-          />
-        </div>
-      ) : null}
+      <div
+        className={cx(`${classBaseItem}Header`, dropTargetClassName)}
+        data-drop-target="tabs"
+      >
+        <Tabstrip activeTabIndex={active} onActiveChange={setActive}>
+          {renderTabsForStack(stackId, children)}
+        </Tabstrip>
+      </div>
       <div className={cx(`${classBaseItem}Content`, dropTargetClassName)}>
-        {children}
+        <Stack active={active} id={stackId} showTabs={false}>
+          {children}
+        </Stack>
       </div>
     </div>
   );
