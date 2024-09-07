@@ -4,19 +4,19 @@ import {
   renderTabsForStack,
   useDraggable,
   useGridLayoutDragStartHandler,
-  useGridLayoutProps
+  useGridLayoutProps,
 } from "@finos/vuu-layout";
 import { useComponentCssInjection } from "@salt-ds/styles";
 import { useWindow } from "@salt-ds/window";
 import cx from "clsx";
-import { DragEvent, useCallback, useState } from "react";
+import { DragEvent, useCallback, useLayoutEffect, useState } from "react";
 import { useAsDropTarget } from "./useAsDropTarget";
 import { useNotDropTarget } from "./useNotDropTarget";
 
 import { queryClosest } from "@finos/vuu-utils";
 import gridLayoutCss from "./GridLayout.css";
 import gridSplitterCss from "./GridSplitter.css";
-import { Tabstrip } from "@finos/vuu-ui-controls";
+import { Tabstrip, useEditableText } from "@finos/vuu-ui-controls";
 
 const classBaseItem = "vuuGridLayoutItem";
 
@@ -38,17 +38,22 @@ export const GridLayoutStackedItem = ({
   useComponentCssInjection({
     testId: "vuu-grid-layout",
     css: gridLayoutCss,
-    window: targetWindow
+    window: targetWindow,
   });
   useComponentCssInjection({
     testId: "vuu-grid-splitter",
     css: gridSplitterCss,
-    window: targetWindow
+    window: targetWindow,
   });
 
   const layoutProps = useGridLayoutProps(id);
   const onDragStart = useGridLayoutDragStartHandler();
   const [active, setActive] = useState(activeProp);
+
+  useLayoutEffect(() => {
+    console.log(`activeProp changed ${activeProp}`);
+    setActive(activeProp);
+  }, [activeProp]);
 
   const getPayload = useCallback(
     (evt: DragEvent<Element>): [string, string] => {
@@ -58,7 +63,7 @@ export const GridLayoutStackedItem = ({
       }
       throw Error("GridLayoutItem no found");
     },
-    []
+    [],
   );
 
   const useDropTargetHook = isDropTarget ? useAsDropTarget : useNotDropTarget;
@@ -66,7 +71,7 @@ export const GridLayoutStackedItem = ({
   const draggableProps = useDraggable({
     draggableClassName: classBaseItem,
     getPayload,
-    onDragStart
+    onDragStart,
   });
 
   // const TabstripProps = useMemo<TabstripProps>(() => ({}), []);
@@ -74,12 +79,12 @@ export const GridLayoutStackedItem = ({
   const className = cx(classBaseItem, {
     [`${classBaseItem}-resizeable-h`]: resizeable === "h",
     [`${classBaseItem}-resizeable-v`]: resizeable === "v",
-    [`${classBaseItem}-resizeable-vh`]: resizeable === "hv"
+    [`${classBaseItem}-resizeable-vh`]: resizeable === "hv",
   });
 
   const style = {
     ...styleProp,
-    ...layoutProps
+    ...layoutProps,
   };
 
   const stackId = `stack-${id}`;

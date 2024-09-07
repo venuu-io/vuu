@@ -41,16 +41,10 @@ export const useAsDropTarget = () => {
 
   const onDragEnter = useCallback<DragEventHandler>((evt) => {
     const target = queryClosest(evt.target, `.${dropTargetClassName}`);
-    if (target) {
-      console.log(`enter dropTarget ${evt.target.className}
-        current dropTarget ${dropTargetRef.current?.className} 
-        `);
-    }
     if (target !== dropTargetRef.current) {
       if (target) {
         dropTargetRef.current = target;
         const { bottom, left, right, top } = target.getBoundingClientRect();
-        console.log(`set dropTarget to new target ${top} ${bottom}`);
         targetRectRef.current.bottom = bottom;
         targetRectRef.current.left = left;
         targetRectRef.current.right = right;
@@ -67,10 +61,7 @@ export const useAsDropTarget = () => {
   const onDragLeave = useCallback<DragEventHandler>((evt) => {
     const target = queryClosest(evt.target, `.${dropTargetClassName}`);
     if (target === evt.target) {
-      console.log(`drag leave ${target.className}`);
-
       if (target === dropTargetRef.current) {
-        console.log("set dropTarget ref to undefined");
         dropTargetRef.current = undefined;
         positionRef.current = undefined;
       }
@@ -108,18 +99,15 @@ export const useAsDropTarget = () => {
               clientY,
               rect,
               pctX,
-              pctY
+              pctY,
             );
             const { current: lastPosition } = positionRef;
-            console.log(
-              `dragOver ${target.className} last postion ${lastPosition} position ${position}`
-            );
 
             if (position !== lastPosition) {
               if (dropTargetRef.current) {
                 removedropTargetPositionClassName(target);
                 dropTargetRef.current.classList.add(
-                  `${dropTargetClassName}-${position}`
+                  `${dropTargetClassName}-${position}`,
                 );
               }
               positionRef.current = position;
@@ -151,7 +139,6 @@ export const useAsDropTarget = () => {
           const dropId = evt.dataTransfer.getData("text/plain");
           if (dropId) {
             drop(id, dropId, positionRef.current);
-            console.log(`useAsDropTarget, reposition ${dropId}`);
           } else {
             throw Error("onDrop no payload to drop");
           }
@@ -161,7 +148,7 @@ export const useAsDropTarget = () => {
         positionRef.current = undefined;
       }
     },
-    [drop]
+    [drop],
   );
 
   return {

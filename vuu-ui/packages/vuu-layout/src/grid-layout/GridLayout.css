@@ -36,6 +36,7 @@
 .vuuGridLayoutItemHeader {
   align-items: center;
   background-color: #ccc;
+  cursor: grab;
   display: flex;
   flex: 0 0 var(--vuu-header-height);
   inset: var(--vuu-grid-gap) var(--vuu-grid-gap) auto var(--vuu-grid-gap);
